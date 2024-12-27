@@ -46,8 +46,8 @@ ht_table_t* ht_new_table() {
   return table;
 }
 
-// Free the memory
-void ht_delete_item(ht_item_t* item) {
+// Free the memory allocated for an item
+static void ht_delete_item(ht_item_t* item) {
   if (item == NULL) {
     return;
   }
@@ -55,4 +55,18 @@ void ht_delete_item(ht_item_t* item) {
   free(item->key);
   free(item->value);
   free(item);
+}
+
+// Free the memory allocated for a table
+void ht_delete_table(ht_table_t* table) {
+  for (int i = 0; i < table->size; ++i) {
+    ht_item_t* item = table->items[i];
+
+    if (item != NULL) {
+      ht_delete_item(item);
+    }
+  }
+
+  free(table->items);
+  free(table);
 }
