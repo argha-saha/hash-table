@@ -6,5 +6,5 @@ typedef struct {
 typedef struct {
   int size;
   int item_count;
-  item_t** items;
+  ht_item_t** items;
 } ht_table_t;
