@@ -17,7 +17,7 @@ static ht_item_t* ht_new_item(const char* key, const char* value) {
   ht_item_t* item = malloc(sizeof(ht_item_t));
 
   if (item == NULL) {
-    fprintf("Hash table item memory allocation failed.\n");
+    fprintf(stderr, "Hash table item memory allocation failed.\n");
     return NULL;
   }
 
@@ -41,7 +41,7 @@ ht_table_t* ht_new_table() {
   table->items = malloc(sizeof(ht_item_t*) * table->size);
   
   if (table->items == NULL) {
-    fprintf("Item pointer memory allocation failed.\n");
+    fprintf(stderr, "Item pointer memory allocation failed.\n");
     free(table);
     return NULL;
   }
@@ -93,5 +93,41 @@ static uint32_t ht_fnv1a_hashing(const char* s) {
 }
 
 int main() {
+  // Test 1: ht_new_item()
+  char* testkey = "key1";
+  char* testval = "value1";
+  ht_item_t* item = ht_new_item(testkey, testval);
+
+  if (item == NULL) {
+    printf("ht_new_item() FAIL: Nemory allocation failed.\n");
+  } else if (strcmp(item->key, testkey) || strcmp(item->value, testval)) {
+    printf("ht_new_item() FAIL: Failed to set key and value.\n");
+  } else {
+    printf("ht_new_item() PASS: Created a valid item. Key: '%s', Value: '%s'\n", item->key, item->value);
+  }
+
+  // Test 2: ht_delete_item()
+  ht_delete_item(item);
+  printf("ht_delete_item(): Must check leaks/valgrind to verify correctness.\n");
+
+  // Test 3: ht_new_table()
+  ht_table_t* table = ht_new_table();
+
+  if (table == NULL) {
+    printf("ht_new_table() FAIL: Memory allocation failed.\n");
+  } else if (table->size != 63 || table->item_count != 0 || table->items == NULL) {
+    printf("ht_new_table() FAIL: Failed to initialize table.\n");
+  } else {
+    printf("ht_new_table() PASS: Created a valid table.\n");
+  }
+
+  // Test 4: ht_delete_table()
+  ht_delete_table(table);
+  printf("ht_delete_table(): Must check leaks/valgrind to verify correctness.\n");
+
+  // Test 5: ht_fnv1a_hashing()
+  uint32_t hash = ht_fnv1a_hashing("hashtable");
+  printf("ht_fnv1a_hashing(): Hash value for 'hashtable' is %u.\n", hash);
+
   return EXIT_SUCCESS;
 }
