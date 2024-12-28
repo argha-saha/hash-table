@@ -1,7 +1,12 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "hash_table.h"
+
+// FNV-1a constants
+const uint32_t FNV_OFFSET_BASIS = 2166136261U;
+const uint32_t FNV_PRIME = 16777619U;
 
 // Allocate memory for a hash table item
 static ht_item_t* ht_new_item(const char* key, const char* value) {
@@ -59,7 +64,11 @@ static void ht_delete_item(ht_item_t* item) {
 
 // Free the memory allocated for a table
 void ht_delete_table(ht_table_t* table) {
-  for (int i = 0; i < table->size; ++i) {
+  if (table == NULL) {
+    return;
+  }
+
+  for (size_t i = 0; i < table->size; ++i) {
     ht_item_t* item = table->items[i];
 
     if (item != NULL) {
@@ -69,4 +78,20 @@ void ht_delete_table(ht_table_t* table) {
 
   free(table->items);
   free(table);
+}
+
+// FNV-1a hash function
+static uint32_t ht_fnv1a_hashing(const char* s) {
+  uint32_t hash = FNV_OFFSET_BASIS;
+
+  for (size_t i = 0; s[i] != '\0'; ++i) {
+    hash ^= (uint32_t) s[i];
+    hash *= FNV_PRIME;
+  }
+
+  return hash;
+}
+
+int main() {
+  return EXIT_SUCCESS;
 }
