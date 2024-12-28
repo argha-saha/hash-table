@@ -38,15 +38,13 @@ ht_table_t* ht_new_table() {
 
   table->size = 64;
   table->item_count = 0;
-  table->items = malloc(sizeof(ht_item_t*) * table->size);
+  table->items = calloc(table->size, sizeof(ht_item_t*));
   
   if (table->items == NULL) {
     fprintf(stderr, "Item pointer memory allocation failed.\n");
     free(table);
     return NULL;
   }
-
-  memset(table->items, 0, sizeof(ht_item_t*) * table->size);
 
   return table;
 }
@@ -142,11 +140,39 @@ char* ht_search(ht_table_t* table, const char* key) {
     if (current_item == NULL) {
       return NULL;
     } else if (strcmp(current_item->key, key) == 0) {
+      // Key match -> return value
       return current_item->value;
     }
   }
 
   return NULL;
+}
+
+void ht_delete_table_item(ht_table_t* table, const char* key) {
+  if (table == NULL || key == NULL) {
+    return;
+  }
+
+  uint32_t hash_value = ht_fnv1a_hashing(key);
+  size_t index = hash_value % table->size;
+  size_t test_index;
+  ht_item_t* current_item;
+
+  // Linear probing
+  for (size_t i = 0; i < table->size; ++i) {
+    test_index = (index + i) % table->size;
+    current_item = table->items[test_index];
+
+    if (current_item == NULL) {
+      return;
+    } else if (strcmp(current_item->key, key) == 0) {
+      // Key match -> delete item
+      ht_delete_item(current_item);
+      table->items[test_index] = NULL;
+      table->item_count--;
+      return;
+    }
+  }
 }
 
 int main() {
@@ -197,6 +223,7 @@ int main() {
       printf("ht_insert() FAIL: Failed to set key and value.\n");
     } else {
       printf("ht_insert() PASS: Inserted a valid item. Key: '%s', Value: '%s'\n", inserted_item->key, inserted_item->value);
+      printf("table->item_count: %zu\n", table->item_count);
     }
   }
 
@@ -211,6 +238,29 @@ int main() {
       printf("ht_search() FAIL: Failed to return correct value.\n");
     } else {
       printf("ht_search() PASS: Found the correct value. Key: '%s', Value: '%s'\n", search_key, search_val);
+    }
+  }
+
+  // Test: ht_delete_table_item()
+  if (table) {
+    size_t current_item_count = table->item_count;
+    
+    ht_delete_table_item(table, "insertkeytest");
+
+    size_t expected_index = ht_fnv1a_hashing("insertkeytest") % table->size;
+    ht_item_t* deleted_item = table->items[expected_index];
+
+
+    if (deleted_item != NULL) {
+      printf("ht_delete_table_item() FAIL: Failed to delete item.\n");
+    } else {
+      printf("ht_delete_table_item() PASS: Deleted item successfully.\n");
+    }
+
+    if (table->item_count != current_item_count - 1) {
+      printf("ht_delete_table_item() FAIL: Failed to update item count.\n");
+    } else {
+      printf("ht_delete_table_item() PASS: Updated item count successfully.\n");
     }
   }
 
