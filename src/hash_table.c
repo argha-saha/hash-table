@@ -124,6 +124,31 @@ void ht_insert(ht_table_t* table, const char* key, const char* value) {
   fprintf(stderr, "Hash table is full.\n");
 }
 
+char* ht_search(ht_table_t* table, const char* key) {
+  if (table == NULL || key == NULL) {
+    return NULL;
+  }
+
+  uint32_t hash_value = ht_fnv1a_hashing(key);
+  size_t index = hash_value % table->size;
+  size_t test_index;
+  ht_item_t* current_item;
+
+  // Linear probing
+  for (size_t i = 0; i < table->size; ++i) {
+    test_index = (index + i) % table->size;
+    current_item = table->items[test_index];
+
+    if (current_item == NULL) {
+      return NULL;
+    } else if (strcmp(current_item->key, key) == 0) {
+      return current_item->value;
+    }
+  }
+
+  return NULL;
+}
+
 int main() {
   // Test: ht_new_item()
   char* test_key = "key1";
@@ -172,6 +197,20 @@ int main() {
       printf("ht_insert() FAIL: Failed to set key and value.\n");
     } else {
       printf("ht_insert() PASS: Inserted a valid item. Key: '%s', Value: '%s'\n", inserted_item->key, inserted_item->value);
+    }
+  }
+
+  // Test: ht_search()
+  if (table) {
+    const char* search_key = "insertkeytest";
+    const char* search_val = ht_search(table, search_key);
+
+    if (search_val == NULL) {
+      printf("ht_search() FAIL: Failed to find key.\n");
+    } else if (strcmp(search_val, "insertvaluetest")) {
+      printf("ht_search() FAIL: Failed to return correct value.\n");
+    } else {
+      printf("ht_search() PASS: Found the correct value. Key: '%s', Value: '%s'\n", search_key, search_val);
     }
   }
 
