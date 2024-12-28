@@ -36,7 +36,7 @@ ht_table_t* ht_new_table() {
     return NULL;
   }
 
-  table->size = 63;
+  table->size = 64;
   table->item_count = 0;
   table->items = malloc(sizeof(ht_item_t*) * table->size);
   
@@ -92,42 +92,92 @@ static uint32_t ht_fnv1a_hashing(const char* s) {
   return hash;
 }
 
+// Insert a key-value pair into the hash table
+void ht_insert(ht_table_t* table, const char* key, const char* value) {
+  if (table == NULL || key == NULL || value == NULL) {
+    return;
+  }
+
+  uint32_t hash_value = ht_fnv1a_hashing(key);
+  size_t index = hash_value % table->size;
+  size_t test_index;
+  ht_item_t* current_item;
+
+  // Linear probing
+  for (size_t i = 0; i < table->size; ++i) {
+    test_index = (index + i) % table->size;
+    current_item = table->items[test_index];
+
+    if (current_item == NULL) {
+      // Empty slot
+      table->items[test_index] = ht_new_item(key, value);
+      table->item_count++;
+      return;
+    } else if (strcmp(current_item->key, key) == 0) {
+      // Key match -> update value
+      free(current_item->value);
+      current_item->value = strdup(value);
+      return;
+    }
+  }
+
+  fprintf(stderr, "Hash table is full.\n");
+}
+
 int main() {
-  // Test 1: ht_new_item()
-  char* testkey = "key1";
-  char* testval = "value1";
-  ht_item_t* item = ht_new_item(testkey, testval);
+  // Test: ht_new_item()
+  char* test_key = "key1";
+  char* test_val = "value1";
+  ht_item_t* item = ht_new_item(test_key, test_val);
 
   if (item == NULL) {
     printf("ht_new_item() FAIL: Nemory allocation failed.\n");
-  } else if (strcmp(item->key, testkey) || strcmp(item->value, testval)) {
+  } else if (strcmp(item->key, test_key) || strcmp(item->value, test_val)) {
     printf("ht_new_item() FAIL: Failed to set key and value.\n");
   } else {
     printf("ht_new_item() PASS: Created a valid item. Key: '%s', Value: '%s'\n", item->key, item->value);
   }
 
-  // Test 2: ht_delete_item()
+  // Test: ht_delete_item()
   ht_delete_item(item);
   printf("ht_delete_item(): Must check leaks/valgrind to verify correctness.\n");
 
-  // Test 3: ht_new_table()
+  // Test: ht_new_table()
   ht_table_t* table = ht_new_table();
 
   if (table == NULL) {
     printf("ht_new_table() FAIL: Memory allocation failed.\n");
-  } else if (table->size != 63 || table->item_count != 0 || table->items == NULL) {
+  } else if (table->size != 64 || table->item_count != 0 || table->items == NULL) {
     printf("ht_new_table() FAIL: Failed to initialize table.\n");
   } else {
     printf("ht_new_table() PASS: Created a valid table.\n");
   }
 
-  // Test 4: ht_delete_table()
-  ht_delete_table(table);
-  printf("ht_delete_table(): Must check leaks/valgrind to verify correctness.\n");
-
-  // Test 5: ht_fnv1a_hashing()
+  // Test: ht_fnv1a_hashing()
   uint32_t hash = ht_fnv1a_hashing("hashtable");
   printf("ht_fnv1a_hashing(): Hash value for 'hashtable' is %u.\n", hash);
+
+  // Test: ht_insert()
+  if (table) {
+    const char* insert_key = "insertkeytest";
+    const char* insert_val = "insertvaluetest";
+    ht_insert(table, insert_key, insert_val);
+
+    size_t expected_index = ht_fnv1a_hashing(insert_key) % table->size;
+    ht_item_t* inserted_item = table->items[expected_index];
+
+    if (inserted_item == NULL) {
+      printf("ht_insert() FAIL: Failed to insert item.\n");
+    } else if (strcmp(inserted_item->key, insert_key) || strcmp(inserted_item->value, insert_val)) {
+      printf("ht_insert() FAIL: Failed to set key and value.\n");
+    } else {
+      printf("ht_insert() PASS: Inserted a valid item. Key: '%s', Value: '%s'\n", inserted_item->key, inserted_item->value);
+    }
+  }
+
+  // Test: ht_delete_table()
+  ht_delete_table(table);
+  printf("ht_delete_table(): Must check leaks/valgrind to verify correctness.\n");
 
   return EXIT_SUCCESS;
 }
