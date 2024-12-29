@@ -28,7 +28,11 @@ static ht_item_t* ht_new_item(const char* key, const char* value) {
 }
 
 // Initialize a new hash table
-ht_table_t* ht_new_table() {
+ht_table_t* ht_new_table(size_t ht_size) {
+  if (!ht_size) {
+    ht_size = 64;
+  }
+
   ht_table_t* table = malloc(sizeof(ht_table_t));
 
   if (table == NULL) {
@@ -36,7 +40,7 @@ ht_table_t* ht_new_table() {
     return NULL;
   }
 
-  table->size = 64;
+  table->size = ht_size;
   table->item_count = 0;
   table->items = calloc(table->size, sizeof(ht_item_t*));
   
@@ -194,11 +198,12 @@ int main() {
   printf("ht_delete_item(): Must check leaks/valgrind to verify correctness.\n");
 
   // Test: ht_new_table()
-  ht_table_t* table = ht_new_table();
+  size_t table_size = 64;
+  ht_table_t* table = ht_new_table(table_size);
 
   if (table == NULL) {
     printf("ht_new_table() FAIL: Memory allocation failed.\n");
-  } else if (table->size != 64 || table->item_count != 0 || table->items == NULL) {
+  } else if (table->size != table_size || table->item_count != 0 || table->items == NULL) {
     printf("ht_new_table() FAIL: Failed to initialize table.\n");
   } else {
     printf("ht_new_table() PASS: Created a valid table.\n");
