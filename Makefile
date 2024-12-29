@@ -14,10 +14,13 @@ $(TARGET): $(SOURCE) $(HEADERS) | $(BUILD_DIR)
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
+run: $(TARGET)
+	./$(TARGET)
+
 leaks: $(TARGET)
 	leaks --atExit -- ./$(TARGET)
 
 clean:
 	rm -rf $(BUILD_DIR)
 
-.PHONY: leaks clean
+.PHONY: run leaks clean
