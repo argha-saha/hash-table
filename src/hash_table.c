@@ -4,6 +4,10 @@
 #include <string.h>
 #include "hash_table.h"
 
+#define ANSI_RED "\x1b[31m"
+#define ANSI_GREEN "\x1b[32m"
+#define ANSI_RESET "\x1b[0m"
+
 // FNV-1a constants
 const uint32_t FNV_OFFSET_BASIS = 2166136261U;
 const uint32_t FNV_PRIME = 16777619U;
@@ -16,7 +20,7 @@ static ht_item_t* ht_new_item(const char* key, const char* value) {
 
   ht_item_t* item = malloc(sizeof(ht_item_t));
 
-  if (item == NULL) {
+if (item == NULL) {
     fprintf(stderr, "Hash table item memory allocation failed.\n");
     return NULL;
   }
@@ -186,11 +190,11 @@ int main() {
   ht_item_t* item = ht_new_item(test_key, test_val);
 
   if (item == NULL) {
-    printf("ht_new_item() FAIL: Nemory allocation failed.\n");
+    printf(ANSI_RED "FAIL: " ANSI_RESET "ht_new_item() Memory allocation failed.\n");
   } else if (strcmp(item->key, test_key) || strcmp(item->value, test_val)) {
-    printf("ht_new_item() FAIL: Failed to set key and value.\n");
+    printf(ANSI_RED "FAIL: "ANSI_RESET "ht_new_item() Failed to set key and value.\n");
   } else {
-    printf("ht_new_item() PASS: Created a valid item. Key: '%s', Value: '%s'\n", item->key, item->value);
+    printf(ANSI_GREEN "PASS: " ANSI_RESET "ht_new_item() Created a valid item. Key: '%s', Value: '%s'\n", item->key, item->value);
   }
 
   // Test: ht_delete_item()
@@ -202,11 +206,11 @@ int main() {
   ht_table_t* table = ht_new_table(table_size);
 
   if (table == NULL) {
-    printf("ht_new_table() FAIL: Memory allocation failed.\n");
+    printf(ANSI_RED "FAIL: " ANSI_RESET "ht_new_table() Memory allocation failed.\n");
   } else if (table->size != table_size || table->item_count != 0 || table->items == NULL) {
-    printf("ht_new_table() FAIL: Failed to initialize table.\n");
+    printf(ANSI_RED "FAIL: " ANSI_RESET "ht_new_table() Failed to initialize table.\n");
   } else {
-    printf("ht_new_table() PASS: Created a valid table.\n");
+    printf(ANSI_GREEN "PASS: " ANSI_RESET "ht_new_table() Created a valid table.\n");
   }
 
   // Test: ht_fnv1a_hashing()
@@ -223,11 +227,12 @@ int main() {
     ht_item_t* inserted_item = table->items[expected_index];
 
     if (inserted_item == NULL) {
-      printf("ht_insert() FAIL: Failed to insert item.\n");
+      printf(ANSI_RED "FAIL: " ANSI_RESET "ht_insert() Failed to insert item.\n");
     } else if (strcmp(inserted_item->key, insert_key) || strcmp(inserted_item->value, insert_val)) {
-      printf("ht_insert() FAIL: Failed to set key and value.\n");
+      printf(ANSI_RED "FAIL: " ANSI_RESET "ht_insert() Failed to set key and value.\n");
     } else {
-      printf("ht_insert() PASS: Inserted a valid item. Key: '%s', Value: '%s'\n", inserted_item->key, inserted_item->value);
+      printf(ANSI_GREEN "PASS: "ANSI_RESET "ht_insert() Inserted a valid item." 
+             "Key: '%s', Value: '%s'\n", inserted_item->key, inserted_item->value);
       printf("table->item_count: %zu\n", table->item_count);
     }
   }
@@ -238,11 +243,12 @@ int main() {
     const char* search_val = ht_search(table, search_key);
 
     if (search_val == NULL) {
-      printf("ht_search() FAIL: Failed to find key.\n");
+      printf(ANSI_RED "FAIL: " ANSI_RESET "ht_search() Failed to find key.\n");
     } else if (strcmp(search_val, "insertvaluetest")) {
-      printf("ht_search() FAIL: Failed to return correct value.\n");
+      printf(ANSI_RED "FAIL: " ANSI_RESET "Failed to return correct value.\n");
     } else {
-      printf("ht_search() PASS: Found the correct value. Key: '%s', Value: '%s'\n", search_key, search_val);
+      printf(ANSI_GREEN "PASS: " ANSI_RESET "ht_search() Found the correct value." 
+             "Key: '%s', Value: '%s'\n", search_key, search_val);
     }
   }
 
@@ -257,15 +263,15 @@ int main() {
 
 
     if (deleted_item != NULL) {
-      printf("ht_delete_table_item() FAIL: Failed to delete item.\n");
+      printf(ANSI_RED "FAIL: " ANSI_RESET "ht_delete_table_item() Failed to delete item.\n");
     } else {
-      printf("ht_delete_table_item() PASS: Deleted item successfully.\n");
+      printf(ANSI_GREEN "PASS: " ANSI_RESET "ht_delete_table_item() Deleted item successfully.\n");
     }
 
     if (table->item_count != current_item_count - 1) {
-      printf("ht_delete_table_item() FAIL: Failed to update item count.\n");
+      printf(ANSI_RED "FAIL: " ANSI_RESET "ht_delete_table_item() Failed to update item count.\n");
     } else {
-      printf("ht_delete_table_item() PASS: Updated item count successfully.\n");
+      printf(ANSI_GREEN "PASS: " ANSI_RESET "ht_delete_table_item() Updated item count successfully.\n");
     }
   }
 
