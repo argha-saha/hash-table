@@ -8,6 +8,11 @@
 #define ANSI_GREEN "\x1b[32m"
 #define ANSI_RESET "\x1b[0m"
 
+static ht_item_t* ht_new_item(const char* key, const char* value);
+static void ht_delete_item(ht_item_t* item);
+static uint32_t ht_fnv1a_hashing(const char* s);
+static void ht_resize(ht_table_t* table, size_t new_size);
+
 // FNV-1a constants
 const uint32_t FNV_OFFSET_BASIS = 2166136261U;
 const uint32_t FNV_PRIME = 16777619U;
@@ -20,7 +25,7 @@ static ht_item_t* ht_new_item(const char* key, const char* value) {
 
   ht_item_t* item = malloc(sizeof(ht_item_t));
 
-if (item == NULL) {
+  if (item == NULL) {
     fprintf(stderr, "Hash table item memory allocation failed.\n");
     return NULL;
   }
@@ -118,6 +123,12 @@ void ht_insert(ht_table_t* table, const char* key, const char* value) {
       // Empty slot
       table->items[test_index] = ht_new_item(key, value);
       table->item_count++;
+
+      // Load factor of 0.7
+      if (table->item_count * 10 > table->size * 7) {
+        ht_resize(table, table->size * 2);
+      }
+
       return;
     } else if (strcmp(current_item->key, key) == 0) {
       // Key match -> update value
@@ -183,6 +194,35 @@ void ht_delete_table_item(ht_table_t* table, const char* key) {
   }
 }
 
+static void ht_resize(ht_table_t* table, size_t new_size) {
+  // Temporary table for in-place modification of original table
+  ht_table_t* new_table = ht_new_table(new_size);
+
+  if (new_table == NULL) {
+    return;
+  }
+
+  for (size_t i = 0; i < table->size; ++i) {
+    ht_item_t* item = table->items[i];
+
+    if (item) {
+      ht_insert(new_table, item->key, item->value);
+      ht_delete_item(item);
+      table->items[i] = NULL;
+    }
+  }
+
+  free(table->items);
+
+  // Existing table gets new items
+  table->size = new_table->size;
+  table->item_count = new_table->item_count;
+  table->items = new_table->items;
+
+  // Free the struct
+  free(new_table);
+}
+
 int main() {
   // Test: ht_new_item()
   char* test_key = "key1";
@@ -231,7 +271,7 @@ int main() {
     } else if (strcmp(inserted_item->key, insert_key) || strcmp(inserted_item->value, insert_val)) {
       printf(ANSI_RED "FAIL: " ANSI_RESET "ht_insert() Failed to set key and value.\n");
     } else {
-      printf(ANSI_GREEN "PASS: "ANSI_RESET "ht_insert() Inserted a valid item." 
+      printf(ANSI_GREEN "PASS: "ANSI_RESET "ht_insert() Inserted a valid item. " 
              "Key: '%s', Value: '%s'\n", inserted_item->key, inserted_item->value);
       printf("table->item_count: %zu\n", table->item_count);
     }
@@ -247,7 +287,7 @@ int main() {
     } else if (strcmp(search_val, "insertvaluetest")) {
       printf(ANSI_RED "FAIL: " ANSI_RESET "Failed to return correct value.\n");
     } else {
-      printf(ANSI_GREEN "PASS: " ANSI_RESET "ht_search() Found the correct value." 
+      printf(ANSI_GREEN "PASS: " ANSI_RESET "ht_search() Found the correct value. " 
              "Key: '%s', Value: '%s'\n", search_key, search_val);
     }
   }
@@ -278,6 +318,27 @@ int main() {
   // Test: ht_delete_table()
   ht_delete_table(table);
   printf("ht_delete_table(): Must check leaks/valgrind to verify correctness.\n");
+
+  // Test: ht_resize()
+  size_t prev_size = 5;
+  ht_table_t* table2 = ht_new_table(prev_size);
+
+  // Insert number of items to exceed load factor
+  ht_insert(table2, "key1", "val1");
+  ht_insert(table2, "key2", "val2");
+  ht_insert(table2, "key3", "val3");
+  ht_insert(table2, "key4", "val4");
+
+  if (table2->size == prev_size * 2) {
+    printf(ANSI_GREEN "PASS: " ANSI_RESET "ht_resize()\n");
+  } else {
+    printf(ANSI_RED "FAIL: " ANSI_RESET "ht_resize()\n");
+  }
+
+  // printf("Size of Table 2: %zu\n", table2->size);
+  // printf("Item count of Table 2: %zu\n", table2->item_count);
+
+  ht_delete_table(table2);
 
   return EXIT_SUCCESS;
 }
